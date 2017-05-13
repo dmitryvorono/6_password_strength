@@ -2,6 +2,7 @@ import sys
 import os
 import re
 import getpass
+import functools
 
 
 def load_blacklist(file_path):
@@ -18,17 +19,10 @@ def calc_rating_length(password):
 
 
 def calc_rating_strength(password):
-    rating = 0
-    delta_rating = 0.25
-    if re.search(r'\d', password):
-        rating += delta_rating
-    if re.search(r'[a-z]', password):
-        rating += delta_rating
-    if re.search(r'[A-Z]', password):
-        rating += delta_rating
-    if re.search(r'\W+', password):
-        rating += delta_rating
-    return rating
+    check_regexp = [r'\d', r'[a-z]', r'[A-Z]', r'\W']
+    check_regexp = list(map(lambda r: re.search(r, password) is not None, check_regexp))
+    count_positive_checks = functools.reduce(lambda x, y: x + y, check_regexp)
+    return count_positive_checks / len(check_regexp)
 
 
 def get_password_strength(password, path_to_blacklist=None):
@@ -40,9 +34,14 @@ def get_password_strength(password, path_to_blacklist=None):
     return round(calc_rating_length(password)*calc_rating_strength(password))
 
 
+def print_password_strength(strength):
+    print('Your password strength is {0}'.format(strength))
+
+
 if __name__ == '__main__':
     blacklist_filepath = None
     if len(sys.argv) > 1:
         blacklist_filepath = sys.argv[1]
     password = getpass.getpass()
-    print(get_password_strength(password, blacklist_filepath))
+    password_strength = get_password_strength(password, blacklist_filepath)
+    print_password_strength(password_strength)
